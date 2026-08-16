@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { spawnSync } = require('node:child_process');
+const os = require('node:os');
+const path = require('node:path');
 
 const { isPrivateIp, validateExternalUrl } = require('../server/services/externalUrl');
 const { sealUrl, unsealUrl } = require('../server/services/urlToken');
@@ -43,6 +45,28 @@ test('provider 401 errors do not clear the local NodeCast session', async () => 
     await assert.rejects(context.window.API.request('GET', '/proxy/provider'), /Provider rejected/);
     assert.equal(tokenRemoved, false);
     assert.equal(context.window.location.href, '/');
+});
+
+test('concurrent database updates retain sources and users', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nodecast-db-test-'));
+    try {
+        const result = spawnSync(process.execPath, ['-e', `
+            process.env.NODECAST_DATA_DIR = process.argv[1];
+            const db = require('./server/db');
+            Promise.all([
+                db.sources.create({ type: 'xtream', name: 'Test source', url: 'https://example.test' }),
+                db.users.create({ username: 'test-user', role: 'admin' })
+            ]).then(async () => {
+                const data = await db.loadDb();
+                process.stdout.write(JSON.stringify({ sources: data.sources.length, users: data.users.length }));
+            }).catch(error => { console.error(error); process.exit(1); });
+        `, tempDir], { cwd: process.cwd(), encoding: 'utf8' });
+
+        assert.equal(result.status, 0, result.stderr);
+        assert.deepEqual(JSON.parse(result.stdout), { sources: 1, users: 1 });
+    } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    }
 });
 
 test('CSP inline-script hashes are stable across Windows and browser newlines', () => {
