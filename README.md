@@ -170,6 +170,8 @@ SEED_XTREAM_PASSWORD=your_password
 - Provider metadata is escaped before HTML rendering, and Content Security Policy headers block unapproved scripts and external connections.
 - NodeCast automatically keeps HTTPS across provider redirects when the redirected media host supports it.
 - A strong persistent JWT secret is generated under `data/` when `JWT_SECRET` is not configured.
+- Login lifetime is configurable through `JWT_EXPIRY`; the local Docker configuration uses 30 days.
+- Provider authentication errors do not invalidate the NodeCast login session.
 
 If your provider intentionally runs on a private LAN address, set `ALLOW_PRIVATE_UPSTREAMS=true`. This weakens SSRF protection and should not be enabled for internet-supplied playlists.
 

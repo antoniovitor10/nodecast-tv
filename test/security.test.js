@@ -2,11 +2,48 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { spawnSync } = require('node:child_process');
 
 const { isPrivateIp, validateExternalUrl } = require('../server/services/externalUrl');
 const { sealUrl, unsealUrl } = require('../server/services/urlToken');
 const { fetchValidated } = require('../server/services/safeFetch');
 const { createInlineScriptHash } = require('../server/services/contentSecurityPolicy');
+
+test('configured JWT lifetime is applied to newly issued tokens', () => {
+    const result = spawnSync(process.execPath, ['-e', `
+        process.env.JWT_SECRET = 'test-only-secret-that-is-at-least-32-characters';
+        process.env.JWT_EXPIRY = '30d';
+        const jwt = require('jsonwebtoken');
+        const auth = require('./server/auth');
+        const payload = jwt.decode(auth.generateToken({ id: 1, username: 'test', role: 'admin' }));
+        process.stdout.write(String(payload.exp - payload.iat));
+    `], { cwd: process.cwd(), encoding: 'utf8' });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(Number(result.stdout), 30 * 24 * 60 * 60);
+});
+
+test('provider 401 errors do not clear the local NodeCast session', async () => {
+    let tokenRemoved = false;
+    const context = {
+        window: { location: { href: '/' } },
+        localStorage: {
+            getItem: () => 'local-session-token',
+            removeItem: () => { tokenRemoved = true; }
+        },
+        fetch: async () => ({
+            ok: false,
+            status: 401,
+            headers: { get: () => 'application/json' },
+            json: async () => ({ error: 'Provider rejected the stream' })
+        })
+    };
+    vm.runInNewContext(fs.readFileSync('public/js/api.js', 'utf8'), context);
+
+    await assert.rejects(context.window.API.request('GET', '/proxy/provider'), /Provider rejected/);
+    assert.equal(tokenRemoved, false);
+    assert.equal(context.window.location.href, '/');
+});
 
 test('CSP inline-script hashes are stable across Windows and browser newlines', () => {
     assert.equal(

@@ -16,6 +16,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      # Avoid interrupting long-running local viewing sessions every 24 hours.
+      JWT_EXPIRY: 30d
       # The container has its own network namespace; the host-side port above
       # remains restricted to 127.0.0.1.
       HOST: 0.0.0.0

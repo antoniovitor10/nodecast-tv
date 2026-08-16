@@ -13,7 +13,7 @@ const { Strategy: LocalStrategy } = require('passport-local');
 // JWT Secret - In production, use environment variable
 const { getRuntimeSecret } = require('./services/runtimeSecret');
 const JWT_SECRET = getRuntimeSecret();
-const JWT_EXPIRY = '24h';
+const JWT_EXPIRY = process.env.JWT_EXPIRY?.trim() || '24h';
 
 /**
  * Hash password using bcrypt
@@ -229,7 +229,20 @@ function configureOidcStrategy(findUserByOidcId, findUserByEmail, createUser) {
 /**
  * Middleware: Require authentication using Passport JWT
  */
-const requireAuth = passport.authenticate('jwt', { session: false });
+function requireAuth(req, res, next) {
+    passport.authenticate('jwt', { session: false }, (err, user) => {
+        if (err) return next(err);
+        if (!user) {
+            return res.status(401).json({
+                error: 'Authentication required',
+                code: 'AUTH_REQUIRED'
+            });
+        }
+
+        req.user = user;
+        next();
+    })(req, res, next);
+}
 
 /**
  * Middleware: Require admin role
