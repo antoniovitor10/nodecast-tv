@@ -6,6 +6,14 @@ const vm = require('node:vm');
 const { isPrivateIp, validateExternalUrl } = require('../server/services/externalUrl');
 const { sealUrl, unsealUrl } = require('../server/services/urlToken');
 const { fetchValidated } = require('../server/services/safeFetch');
+const { createInlineScriptHash } = require('../server/services/contentSecurityPolicy');
+
+test('CSP inline-script hashes are stable across Windows and browser newlines', () => {
+    assert.equal(
+        createInlineScriptHash('const ready = true;\r\nconsole.log(ready);\r\n'),
+        createInlineScriptHash('const ready = true;\nconsole.log(ready);\n')
+    );
+});
 
 test('browser security helpers escape markup and reject script URLs', () => {
     const context = {

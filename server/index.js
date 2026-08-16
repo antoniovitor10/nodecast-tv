@@ -2,11 +2,11 @@ const express = require('express');
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const passport = require('passport');
 const syncService = require('./services/syncService');
 const { seedXtreamSourceFromEnv } = require('./services/sourceSeeder');
 const { getRuntimeSecret } = require('./services/runtimeSecret');
+const { createInlineScriptHash } = require('./services/contentSecurityPolicy');
 
 // Initialize database
 require('./db');
@@ -28,7 +28,7 @@ const inlineScriptHashes = ['index.html', 'login.html'].flatMap(file => {
     return [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
         .map(match => match[1])
         .filter(script => script.trim())
-        .map(script => `'sha256-${crypto.createHash('sha256').update(script).digest('base64')}'`);
+        .map(createInlineScriptHash);
 });
 
 app.use((req, res, next) => {
