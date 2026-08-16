@@ -63,7 +63,7 @@ router.get('/:id', async (req, res) => {
 // Create source
 router.post('/', async (req, res) => {
     try {
-        const { type, name, url, username, password } = req.body;
+        const { type, name, url, username, password, fallbackUrls } = req.body;
 
         if (!type || !name || !url) {
             return res.status(400).json({ error: 'Type, name, and URL are required' });
@@ -73,7 +73,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Invalid source type' });
         }
 
-        const source = await sources.create({ type, name, url, username, password });
+        const sourceData = { type, name, url, username, password };
+        if (type === 'xtream') {
+            sourceData.url = url.replace(/\/+$/, '');
+            sourceData.fallbackUrls = xtreamApi
+                .normalizeBaseUrls(null, fallbackUrls)
+                .filter(item => item !== sourceData.url);
+        }
+
+        const source = await sources.create(sourceData);
         // Trigger Sync
         syncService.syncSource(source.id).catch(console.error);
         res.status(201).json(source);
@@ -91,13 +99,25 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Source not found' });
         }
 
-        const { name, url, username, password } = req.body;
-        const updated = await sources.update(req.params.id, {
+        const { name, url, username, password, fallbackUrls } = req.body;
+        const updates = {
             name: name || existing.name,
             url: url || existing.url,
             username: username !== undefined ? username : existing.username,
             password: password !== undefined ? password : existing.password
-        });
+        };
+
+        if (existing.type === 'xtream') {
+            updates.url = updates.url.replace(/\/+$/, '');
+            if (fallbackUrls !== undefined) {
+                updates.fallbackUrls = xtreamApi
+                    .normalizeBaseUrls(null, fallbackUrls)
+                    .filter(item => item !== updates.url);
+            }
+            xtreamApi.clearPreferred(req.params.id);
+        }
+
+        const updated = await sources.update(req.params.id, updates);
         // Trigger Sync (if critical fields changed? safely just trigger it)
         syncService.syncSource(parseInt(req.params.id)).catch(console.error);
         res.json(updated);
@@ -186,8 +206,9 @@ router.post('/:id/test', async (req, res) => {
         }
 
         if (source.type === 'xtream') {
-            const result = await xtreamApi.authenticate(source.url, source.username, source.password);
-            res.json({ success: true, data: result });
+            const api = xtreamApi.createFromSource(source);
+            const result = await api.authenticate();
+            res.json({ success: true, activeUrl: api.baseUrl, data: result });
         } else if (source.type === 'm3u') {
             const response = await fetch(source.url);
             const text = await response.text();

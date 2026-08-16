@@ -3,6 +3,7 @@ require('dotenv').config();
 const path = require('path');
 const passport = require('passport');
 const syncService = require('./services/syncService');
+const { seedXtreamSourceFromEnv } = require('./services/sourceSeeder');
 
 // Initialize database
 require('./db');
@@ -200,6 +201,10 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, async () => {
     console.log(`NodeCast TV server running on http://localhost:${PORT}`);
+
+    await seedXtreamSourceFromEnv().catch(err => {
+        console.error('[Seed] Failed to create the preconfigured Xtream source:', err.message);
+    });
 
     // Load plugins
     await loadPlugins().catch(err => {

@@ -244,8 +244,9 @@ router.get('/xtream/:sourceId/stream/:streamId/:type', async (req, res) => {
         // Format: http://server:port/movie/username/password/streamId.container (for movie)
         // Format: http://server:port/series/username/password/streamId.container (for series)
 
+        const api = xtreamApi.createFromSource(source);
+        const baseUrl = await api.selectAvailable();
         let streamUrl;
-        const baseUrl = source.url.replace(/\/$/, ''); // Remove trailing slash
 
         if (type === 'live') {
             streamUrl = `${baseUrl}/live/${source.username}/${source.password}/${streamId}.${container}`;
@@ -484,6 +485,7 @@ router.get('/xtream/:sourceId/stream/:streamId/:type?', async (req, res) => {
         }
 
         const api = xtreamApi.createFromSource(source);
+        await api.selectAvailable();
         const { streamId, type = 'live' } = req.params;
         const { container = 'm3u8' } = req.query;
 
@@ -526,6 +528,7 @@ router.get('/epg/:sourceId', async (req, res) => {
         let url = source.url;
         if (source.type === 'xtream') {
             const api = xtreamApi.createFromSource(source);
+            await api.selectAvailable();
             url = api.getXmltvUrl();
         }
 

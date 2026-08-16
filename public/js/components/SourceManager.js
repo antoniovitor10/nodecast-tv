@@ -137,6 +137,9 @@ class SourceManager {
         <div class="source-info">
           <div class="source-name">${source.name}</div>
           <div class="source-url">${source.url}</div>
+          ${type === 'xtream' && source.fallbackUrls?.length
+                ? `<div class="hint">${source.fallbackUrls.length} alternative DNS configured</div>`
+                : ''}
         </div>
         <div class="source-actions">
           <button class="btn btn-sm btn-secondary" data-action="refresh" title="Refresh Data">${Icons.refresh}</button>
@@ -240,6 +243,7 @@ class SourceManager {
     `;
 
         if (type === 'xtream') {
+            const fallbackUrls = Array.isArray(source.fallbackUrls) ? source.fallbackUrls.join('\n') : '';
             return `
         ${nameField}
         ${urlField}
@@ -251,6 +255,12 @@ class SourceManager {
           <label for="source-password">Password</label>
           <input type="password" id="source-password" class="form-input" 
                  value="${source.password && !source.password.includes('•') ? source.password : ''}">
+        </div>
+        <div class="form-group">
+          <label for="source-fallback-urls">Alternative DNS URLs</label>
+          <textarea id="source-fallback-urls" class="form-input" rows="3"
+                    placeholder="http://alternative-server.com:port">${fallbackUrls}</textarea>
+          <p class="hint">One URL per line. They are tried automatically if the active DNS fails.</p>
         </div>
       `;
         }
@@ -266,6 +276,8 @@ class SourceManager {
         const url = document.getElementById('source-url').value.trim();
         const username = document.getElementById('source-username')?.value.trim() || null;
         const password = document.getElementById('source-password')?.value.trim() || null;
+        const fallbackUrls = document.getElementById('source-fallback-urls')?.value
+            .split(/\r?\n/).map(value => value.trim()).filter(Boolean) || [];
 
         if (!name || !url) {
             alert('Name and URL are required');
@@ -295,7 +307,7 @@ class SourceManager {
                 }
             }
 
-            await API.sources.create({ type, name, url, username, password });
+            await API.sources.create({ type, name, url, username, password, fallbackUrls });
             document.getElementById('modal').classList.remove('active');
             await this.loadSources();
 
@@ -317,6 +329,8 @@ class SourceManager {
         const url = document.getElementById('source-url').value.trim();
         const username = document.getElementById('source-username')?.value.trim();
         const password = document.getElementById('source-password')?.value.trim();
+        const fallbackUrls = document.getElementById('source-fallback-urls')?.value
+            .split(/\r?\n/).map(value => value.trim()).filter(Boolean) || [];
 
         if (!name || !url) {
             alert('Name and URL are required');
@@ -328,6 +342,7 @@ class SourceManager {
             if (type === 'xtream') {
                 data.username = username;
                 if (password) data.password = password;
+                data.fallbackUrls = fallbackUrls;
             }
 
             await API.sources.update(id, data);

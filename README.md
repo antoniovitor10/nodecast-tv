@@ -9,6 +9,7 @@ nodecast-tv is a modern, web-based IPTV player featuring Live TV, EPG, Movies (V
 ## Features
 
 - **📺 Live TV**: Fast channel zapping, category grouping, and search.
+- **🖥️ Multi-view**: Watch 1–4 live channels in customizable layouts, with one active audio feed at a time.
 - **📅 TV Guide (EPG)**: Interactive grid guide with 24h timeline, search, and dynamic resizing.
 - **🎬 VOD Support**: Dedicated sections for Movies and TV Series with rich metadata, posters, and seasonal episode lists.
 - **❤️ Favorites System**: Unified favorites for channels, movies, and series with instant synchronization.
@@ -17,6 +18,7 @@ nodecast-tv is a modern, web-based IPTV player featuring Live TV, EPG, Movies (V
 - **⚡ High Performance**: Optimized for large playlists (7000+ channels) using virtual scrolling and batch rendering.
 - **⚙️ Management**: 
   - Support for Xtream Codes and M3U playlists.
+  - Automatic Xtream DNS failover with multiple fallback server URLs.
   - Manage hidden content categories.
   - Playback preferences (volume memory, auto-play).
 - **🎛️ Hardware Transcoding**: GPU-accelerated transcoding with NVIDIA NVENC, AMD AMF, Intel QuickSync, and VAAPI support.
@@ -139,6 +141,28 @@ OIDC_CALLBACK_URL=http://localhost:3000/api/auth/oidc/callback # Adjust for your
 2.  Add your IPTV provider details (Xtream Codes or M3U URL).
 3.  Click "Refresh Sources".
 4.  Navigate to **Live TV**, **Movies**, or **Series** to browse your content.
+
+### Xtream DNS Failover
+
+Xtream sources can include multiple alternative DNS/server URLs. Go to **Settings → Content Sources**, edit an Xtream source, and add one fallback URL per line under **Alternative DNS URLs**. NodeCast TV remembers the responsive server and automatically tries another configured URL when API, EPG, or playback startup fails.
+
+### Multi-view
+
+Open **Multi-view** from the navigation bar and choose a layout with 1, 2, 3, or 4 screens. Each tile has its own channel picker, fullscreen control, and audio toggle. Only one tile is unmuted at a time, and streams are stopped automatically when a tile is removed or the page is closed.
+
+> Each active tile normally counts as a separate provider connection. Make sure your IPTV subscription allows the number of simultaneous streams you select.
+
+### Optional Local Xtream Seed
+
+For local or container-based setups, an initial Xtream source can be created from environment variables when no Xtream source exists yet. Existing sources and changes made through the UI are never overwritten.
+
+```env
+SEED_XTREAM_NAME=My IPTV
+SEED_XTREAM_URL=http://primary-server.example
+SEED_XTREAM_FALLBACK_URLS=http://backup-1.example,http://backup-2.example
+SEED_XTREAM_USERNAME=your_username
+SEED_XTREAM_PASSWORD=your_password
+```
 
 
 ## Browser Codec Support & Transcoding
