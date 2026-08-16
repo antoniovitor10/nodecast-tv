@@ -9,5 +9,6 @@ services:
       - ./data:/app/data
     restart: unless-stopped
     environment:
+      - HOST=0.0.0.0
       - NODE_ENV=production
       - PORT=3000 # Internal container port

@@ -62,7 +62,7 @@ nodecast-tv is a modern, web-based IPTV player featuring Live TV, EPG, Movies (V
     npm run dev
     ```
 
-4.  Open your browser at `http://localhost:3000`.
+4.  Open your browser at `http://127.0.0.1:3000`.
 
 ### Docker Deployment
 
@@ -83,6 +83,7 @@ You can run nodecast-tv easily using Docker.
         environment:
           - NODE_ENV=production
           - PORT=3000 # Optional: Internal container port
+          - HOST=0.0.0.0 # Required inside the container
     ```
 
 2.  Run the container:
@@ -163,6 +164,17 @@ SEED_XTREAM_FALLBACK_URLS=http://backup-1.example,http://backup-2.example
 SEED_XTREAM_USERNAME=your_username
 SEED_XTREAM_PASSWORD=your_password
 ```
+
+### Security defaults
+
+- Local installs listen only on `127.0.0.1` by default. Set `HOST` only when you intentionally deploy behind a firewall or reverse proxy.
+- Provider passwords remain server-side. Playback URLs exposed to the browser use encrypted, process-local tokens.
+- External proxy requests allow only HTTP/HTTPS and reject localhost, private-network, reserved, and oversized image responses by default.
+- Provider metadata is escaped before HTML rendering, and Content Security Policy headers block unapproved scripts and external connections.
+- NodeCast automatically keeps HTTPS across provider redirects when the redirected media host supports it.
+- A strong persistent JWT secret is generated under `data/` when `JWT_SECRET` is not configured.
+
+If your provider intentionally runs on a private LAN address, set `ALLOW_PRIVATE_UPSTREAMS=true`. This weakens SSRF protection and should not be enabled for internet-supplied playlists.
 
 
 ## Browser Codec Support & Transcoding

@@ -17,12 +17,15 @@ test('Xtream API falls back and remembers the responsive URL', async (t) => {
 
     const requestedHosts = [];
     global.fetch = async (url) => {
-        requestedHosts.push(new URL(url).host);
-        if (url.startsWith('http://primary.test')) {
+        const value = String(url);
+        requestedHosts.push(new URL(value).host);
+        if (value.startsWith('http://primary.test')) {
             throw new Error('DNS lookup failed');
         }
         return {
+            status: 200,
             ok: true,
+            headers: { get: () => null },
             json: async () => ({ user_info: { auth: 1 } })
         };
     };
@@ -30,7 +33,8 @@ test('Xtream API falls back and remembers the responsive URL', async (t) => {
     const api = new XtreamApi(
         ['http://primary.test', 'http://backup.test'],
         'user',
-        'pass'
+        'pass',
+        { allowPrivate: true }
     );
 
     const result = await api.authenticate();

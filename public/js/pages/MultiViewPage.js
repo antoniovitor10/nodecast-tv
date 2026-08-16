@@ -214,7 +214,7 @@ class MultiViewPage {
     populateSourceFilter() {
         if (!this.sourceFilter) return;
         this.sourceFilter.innerHTML = '<option value="">Todas as fontes</option>' + this.sources.map(source =>
-            `<option value="${source.id}">${this.escapeHtml(source.name)}</option>`
+            `<option value="${this.escapeHtml(source.id)}">${this.escapeHtml(source.name)}</option>`
         ).join('');
     }
 
@@ -283,8 +283,7 @@ class MultiViewPage {
 
         this.results.innerHTML = visible.map(channel => `
             <button class="multiview-channel-option" data-channel-key="${this.escapeHtml(channel.key)}">
-                <img src="${this.escapeHtml(channel.logo || '/img/placeholder.png')}" alt=""
-                     onerror="this.onerror=null;this.src='/img/placeholder.png'">
+                <img src="${this.escapeHtml(Security.imageUrl(channel.logo))}" alt="">
                 <span>
                     <strong>${this.escapeHtml(channel.name)}</strong>
                     <small>${this.escapeHtml(channel.group)} · ${this.escapeHtml(channel.sourceName)}</small>
@@ -334,8 +333,7 @@ class MultiViewPage {
             video.volume = 1;
             video.onerror = () => this.showTileError(slotIndex, 'Não foi possível reproduzir este canal.');
 
-            const shouldProxy = Boolean(this.app.player?.settings?.forceProxy);
-            const initialUrl = shouldProxy ? this.getProxiedUrl(streamUrl) : streamUrl;
+            const initialUrl = this.getProxiedUrl(streamUrl);
             const looksLikeHls = streamUrl.includes('.m3u8') || streamUrl.toLowerCase().includes('m3u8');
 
             if (looksLikeHls && window.Hls?.isSupported()) {
@@ -347,7 +345,7 @@ class MultiViewPage {
                     fragLoadingMaxRetry: 3
                 });
                 slot.hls = hls;
-                slot.proxyRetried = shouldProxy;
+                slot.proxyRetried = true;
                 hls.loadSource(initialUrl);
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -380,7 +378,9 @@ class MultiViewPage {
     }
 
     getProxiedUrl(url) {
-        return `/api/proxy/stream?url=${encodeURIComponent(url)}`;
+        if (typeof url === 'string' && url.startsWith('/api/')) return url;
+        const safe = Security.safeUrl(url);
+        return safe ? `/api/proxy/stream?url=${encodeURIComponent(safe)}` : '';
     }
 
     getTile(slotIndex) {

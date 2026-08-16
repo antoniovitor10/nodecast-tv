@@ -5,6 +5,7 @@
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const preferredUrls = new Map();
+const { fetchValidated } = require('./safeFetch');
 
 function normalizeBaseUrls(primaryUrl, fallbackUrls = []) {
     const values = [primaryUrl];
@@ -42,6 +43,7 @@ class XtreamApi {
         this.password = password;
         this.timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
         this.onSuccess = options.onSuccess;
+        this.allowPrivate = options.allowPrivate;
     }
 
     /**
@@ -72,8 +74,10 @@ class XtreamApi {
             const url = this.buildApiUrl(action, params, baseUrl);
 
             try {
-                const response = await fetch(url, {
-                    signal: AbortSignal.timeout(this.timeoutMs)
+                const response = await fetchValidated(url, {
+                    signal: AbortSignal.timeout(this.timeoutMs),
+                    preferHttps: true,
+                    allowPrivate: this.allowPrivate
                 });
                 if (!response.ok) {
                     throw new Error(`${response.status} ${response.statusText}`);
