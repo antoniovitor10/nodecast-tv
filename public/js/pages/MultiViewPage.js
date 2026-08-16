@@ -57,6 +57,9 @@ class MultiViewPage {
                     <button class="multiview-control-btn" data-action="audio">Ativar som</button>
                     <button class="multiview-control-btn" data-action="fullscreen">Tela cheia</button>
                 </div>
+                <button class="multiview-exit-fullscreen" data-action="exit-fullscreen" aria-label="Sair da tela cheia">
+                    Sair da tela cheia
+                </button>
                 <div class="multiview-error"></div>
             </article>
         `).join('');
@@ -82,6 +85,9 @@ class MultiViewPage {
                     break;
                 case 'fullscreen':
                     this.enterFullscreen(slotIndex);
+                    break;
+                case 'exit-fullscreen':
+                    this.exitFullscreen();
                     break;
             }
         });
@@ -437,7 +443,15 @@ class MultiViewPage {
     enterFullscreen(slotIndex) {
         const tile = this.getTile(slotIndex);
         if (!tile || !this.slots[slotIndex].channel) return;
-        tile.requestFullscreen?.().catch(() => {});
+        const request = tile.requestFullscreen || tile.webkitRequestFullscreen;
+        if (!request) return;
+        Promise.resolve(request.call(tile)).catch(() => {});
+    }
+
+    exitFullscreen() {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (!exit || (!document.fullscreenElement && !document.webkitFullscreenElement)) return;
+        Promise.resolve(exit.call(document)).catch(() => {});
     }
 
     stopSlot(slotIndex, clearChannel = false) {

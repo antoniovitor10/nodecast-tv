@@ -5069,6 +5069,31 @@ kbd {
   border-color: var(--color-accent-hover);
 }
 
+.multiview-exit-fullscreen {
+  position: absolute;
+  z-index: 6;
+  top: 18px;
+  right: 18px;
+  display: none;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 14px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: rgba(15, 15, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.multiview-exit-fullscreen:hover,
+.multiview-exit-fullscreen:focus-visible {
+  background: var(--color-accent);
+  border-color: var(--color-accent-hover);
+}
+
 .multiview-error {
   display: none;
   z-index: 3;
@@ -5183,6 +5208,11 @@ kbd {
 .multiview-tile:fullscreen {
   border: 0;
   border-radius: 0;
+}
+
+.multiview-tile:fullscreen .multiview-exit-fullscreen,
+.multiview-tile:-webkit-full-screen .multiview-exit-fullscreen {
+  display: inline-flex;
 }
 
 @media (max-width: 768px) {
