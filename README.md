@@ -66,32 +66,29 @@ nodecast-tv is a modern, web-based IPTV player featuring Live TV, EPG, Movies (V
 
 ### Docker Deployment
 
-You can run nodecast-tv easily using Docker.
+The included Compose configuration builds the checked-out local code, persists
+only `data/`, and publishes the app exclusively on the host loopback interface.
+The runtime uses an unprivileged user, a read-only root filesystem, dropped
+Linux capabilities, `no-new-privileges`, and temporary in-memory transcode
+storage. `.env` and `data/` are excluded from the image build context.
 
-1.  Create a `docker-compose.yml` file (or copy the one from this repo):
-
-    ```yaml
-    services:
-      nodecast-tv:
-        build: https://github.com/technomancer702/nodecast-tv.git#main
-        container_name: nodecast-tv
-        ports:
-          - "3000:3000" # Host:Container
-        volumes:
-          - ./data:/app/data
-        restart: unless-stopped
-        environment:
-          - NODE_ENV=production
-          - PORT=3000 # Optional: Internal container port
-          - HOST=0.0.0.0 # Required inside the container
-    ```
-
-2.  Run the container:
+1.  Start Docker Desktop.
+2.  Build and run the local container:
     ```bash
-    docker-compose up -d
+    docker compose up --build -d
     ```
 
-The application will be available at `http://localhost:3000`.
+The application will be available only on this computer at
+`http://127.0.0.1:3000`.
+
+Use `docker compose logs -f` to inspect logs and `docker compose down` to stop
+the app. To refresh the Node.js base image, FFmpeg security packages, and npm
+dependencies after updating the repository, run:
+
+```bash
+docker compose build --pull --no-cache
+docker compose up -d
+```
 
 
 ### Hardware Acceleration Setup
